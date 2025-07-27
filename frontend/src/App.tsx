@@ -178,7 +178,7 @@ function App() {
   const displayNode = hoveredNode || selectedNode;
 
   return (
-    <div className="App">
+    <div className="App" style={{ width: '100vw', height: '100vh', position: 'relative' }}>
       {/* 3D Visualization */}
       <MindMapVisualization
         nodes={nodes}

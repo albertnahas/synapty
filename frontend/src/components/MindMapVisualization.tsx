@@ -150,7 +150,11 @@ const MindMapVisualization: React.FC<MindMapVisualizationProps> = ({
   return (
     <Canvas
       camera={{ position: [0, 200, 500], fov: 60 }}
-      style={{ background: 'radial-gradient(circle, #1a1a2e 0%, #0f0f23 100%)' }}
+      style={{ 
+        width: '100%', 
+        height: '100%', 
+        background: 'radial-gradient(circle, #1a1a2e 0%, #0f0f23 100%)' 
+      }}
     >
       {/* Lighting */}
       <ambientLight intensity={0.4} />
