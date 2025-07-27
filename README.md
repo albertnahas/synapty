@@ -93,6 +93,22 @@ The frontend will be available at `http://localhost:5173`
 - Smooth 60fps 3D interactions
 - Responsive design for all screen sizes
 
+## Deployment
+
+### Quick Deploy to AWS Lambda
+
+1. **Deploy Backend**:
+```bash
+./scripts/deploy-lambda.sh synapty-backend YOUR_OPENAI_API_KEY
+```
+
+2. **Deploy Frontend**:
+```bash
+./scripts/deploy-frontend.sh YOUR_LAMBDA_URL vercel
+```
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment instructions including AWS Lambda, S3, Vercel, and other platforms.
+
 ## Roadmap
 
 - [ ] RAG integration with Pinecone for grounded content

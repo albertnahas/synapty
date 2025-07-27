@@ -91,3 +91,10 @@ jspm_packages/
 .venv/
 pip-log.txt
 pip-delete-this-directory.txt
+
+# Deployment packages and artifacts
+lambda-deploy/
+lambda-package/
+lambda-minimal/
+*.zip
+synapty-backend.zip
