@@ -2,6 +2,8 @@
 
 An interactive 3D mindmap visualization tool that transforms any topic into an explorable knowledge graph using AI.
 
+https://synapty.vercel.app
+
 ## Features
 
 - **Instant Graph Generation**: Type any topic and get a 3D mindmap in under 2 seconds
