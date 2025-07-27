@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import MindMapVisualization from './components/MindMapVisualization';
+import MindMap2D from './components/MindMap2D';
 import { apiService } from './api';
 import { Node, Edge } from './types';
 import PptxGenJS from 'pptxgenjs';
@@ -12,6 +13,7 @@ function App() {
   const [hoveredNode, setHoveredNode] = useState<Node | null>(null);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [expanding, setExpanding] = useState(false);
+  const [is3D, setIs3D] = useState(true);
 
   const handleGenerateGraph = useCallback(async () => {
     if (!topic.trim()) return;
@@ -63,6 +65,16 @@ function App() {
       setExpanding(false);
     }
   }, [selectedNode, expanding]);
+
+  const handleNodeDrag = useCallback((nodeId: string, newPosition: { x: number, y: number, z: number }) => {
+    setNodes(prevNodes => 
+      prevNodes.map(node => 
+        node.id === nodeId 
+          ? { ...node, position: newPosition }
+          : node
+      )
+    );
+  }, []);
 
   const handleReset = useCallback(() => {
     setNodes([]);
@@ -179,20 +191,41 @@ function App() {
 
   return (
     <div className="App" style={{ width: '100vw', height: '100vh', position: 'relative' }}>
-      {/* 3D Visualization */}
-      <MindMapVisualization
-        nodes={nodes}
-        edges={edges}
-        onNodeClick={handleNodeClick}
-        onNodeHover={handleNodeHover}
-        selectedNodeId={selectedNode?.id}
-      />
+      {/* Visualization */}
+      {is3D ? (
+        <MindMapVisualization
+          nodes={nodes}
+          edges={edges}
+          onNodeClick={handleNodeClick}
+          onNodeHover={handleNodeHover}
+          onNodeDrag={handleNodeDrag}
+          selectedNodeId={selectedNode?.id}
+        />
+      ) : (
+        <MindMap2D
+          nodes={nodes}
+          edges={edges}
+          onNodeClick={handleNodeClick}
+          onNodeHover={handleNodeHover}
+          onNodeDrag={handleNodeDrag}
+          selectedNodeId={selectedNode?.id}
+        />
+      )}
 
       {/* UI Overlay */}
       <div className="ui-overlay">
         {/* Input Panel */}
         <div className="input-panel">
-          <h1>Synapty</h1>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <h1>Synapty</h1>
+            <button
+              className="view-toggle-btn"
+              onClick={() => setIs3D(!is3D)}
+              title={`Switch to ${is3D ? '2D' : '3D'} view`}
+            >
+              {is3D ? '2D' : '3D'}
+            </button>
+          </div>
           <div className="input-group">
             <input
               type="text"
@@ -200,7 +233,7 @@ function App() {
               placeholder="Enter any topic to explore..."
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleGenerateGraph()}
+              onKeyDown={(e) => e.key === 'Enter' && handleGenerateGraph()}
               disabled={loading}
             />
             <button

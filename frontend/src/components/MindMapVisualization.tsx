@@ -8,12 +8,19 @@ interface NodeMeshProps {
   node: Node;
   onNodeClick: (node: Node) => void;
   onNodeHover: (node: Node | null) => void;
+  onNodeDrag?: (nodeId: string, newPosition: { x: number, y: number, z: number }) => void;
+  onDragStateChange?: (isDragging: boolean) => void;
   isSelected: boolean;
 }
 
-const NodeMesh: React.FC<NodeMeshProps> = ({ node, onNodeClick, onNodeHover, isSelected }) => {
+const NodeMesh: React.FC<NodeMeshProps> = ({ node, onNodeClick, onNodeHover, onNodeDrag, onDragStateChange, isSelected }) => {
   const meshRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const { camera, gl, raycaster, pointer } = useThree();
+  const dragPlane = useRef(new THREE.Plane(new THREE.Vector3(0, 0, 1), 0));
+  const intersection = useRef(new THREE.Vector3());
+  const [dragOffset] = useState(new THREE.Vector3());
 
   useFrame((state) => {
     if (meshRef.current) {
@@ -51,6 +58,67 @@ const NodeMesh: React.FC<NodeMeshProps> = ({ node, onNodeClick, onNodeHover, isS
     }
   };
 
+  const handlePointerDown = (event: any) => {
+    if (onNodeDrag && event.intersections.length > 0) {
+      setIsDragging(true);
+      onDragStateChange?.(true);
+      event.stopPropagation();
+      
+      // Set up drag plane perpendicular to camera
+      const cameraDirection = new THREE.Vector3();
+      camera.getWorldDirection(cameraDirection);
+      dragPlane.current.setFromNormalAndCoplanarPoint(cameraDirection, event.point);
+      
+      // Calculate offset from node center to intersection point
+      dragOffset.copy(event.point).sub(new THREE.Vector3(node.position.x, node.position.y, node.position.z));
+      
+      gl.domElement.style.cursor = 'grabbing';
+    }
+  };
+
+  useFrame(() => {
+    if (isDragging && onNodeDrag) {
+      // Cast ray from camera through mouse position
+      raycaster.setFromCamera(pointer, camera);
+      
+      // Find intersection with drag plane
+      if (raycaster.ray.intersectPlane(dragPlane.current, intersection.current)) {
+        // Subtract the offset to get the actual node position
+        const newPosition = intersection.current.clone().sub(dragOffset);
+        onNodeDrag(node.id, {
+          x: newPosition.x,
+          y: newPosition.y,
+          z: newPosition.z,
+        });
+      }
+    }
+  });
+
+  // Global pointer up handler
+  useEffect(() => {
+    const handleGlobalPointerUp = () => {
+      if (isDragging) {
+        setIsDragging(false);
+        onDragStateChange?.(false);
+        gl.domElement.style.cursor = 'auto';
+      }
+    };
+
+    if (isDragging) {
+      window.addEventListener('pointerup', handleGlobalPointerUp);
+      return () => window.removeEventListener('pointerup', handleGlobalPointerUp);
+    }
+  }, [isDragging, gl, onDragStateChange]);
+
+  const handlePointerUp = (event: any) => {
+    if (isDragging) {
+      setIsDragging(false);
+      onDragStateChange?.(false);
+      event.stopPropagation();
+      gl.domElement.style.cursor = 'auto';
+    }
+  };
+
   return (
     <group position={[node.position.x, node.position.y, node.position.z]}>
       {/* Node sphere */}
@@ -67,9 +135,13 @@ const NodeMesh: React.FC<NodeMeshProps> = ({ node, onNodeClick, onNodeHover, isS
           setHovered(false);
           onNodeHover(null);
         }}
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
         onClick={(e) => {
           e.stopPropagation();
-          onNodeClick(node);
+          if (!isDragging) {
+            onNodeClick(node);
+          }
         }}
       >
         <meshStandardMaterial
@@ -137,6 +209,7 @@ interface MindMapVisualizationProps {
   edges: Edge[];
   onNodeClick: (node: Node) => void;
   onNodeHover: (node: Node | null) => void;
+  onNodeDrag?: (nodeId: string, newPosition: { x: number, y: number, z: number }) => void;
   selectedNodeId?: string;
 }
 
@@ -145,8 +218,10 @@ const MindMapVisualization: React.FC<MindMapVisualizationProps> = ({
   edges,
   onNodeClick,
   onNodeHover,
+  onNodeDrag,
   selectedNodeId,
 }) => {
+  const [isDraggingAnyNode, setIsDraggingAnyNode] = useState(false);
   return (
     <Canvas
       camera={{ position: [0, 200, 500], fov: 60 }}
@@ -163,9 +238,9 @@ const MindMapVisualization: React.FC<MindMapVisualizationProps> = ({
       
       {/* Camera controls */}
       <OrbitControls
-        enablePan={true}
-        enableZoom={true}
-        enableRotate={true}
+        enablePan={!isDraggingAnyNode}
+        enableZoom={!isDraggingAnyNode}
+        enableRotate={!isDraggingAnyNode}
         minDistance={200}
         maxDistance={1000}
         autoRotate={false}
@@ -184,6 +259,8 @@ const MindMapVisualization: React.FC<MindMapVisualizationProps> = ({
           node={node}
           onNodeClick={onNodeClick}
           onNodeHover={onNodeHover}
+          onNodeDrag={onNodeDrag}
+          onDragStateChange={setIsDraggingAnyNode}
           isSelected={node.id === selectedNodeId}
         />
       ))}

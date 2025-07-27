@@ -184,3 +184,25 @@ html, body {
 .expand-btn:hover {
   transform: translateY(-1px);
 }
+
+.view-toggle-btn {
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 40px;
+}
+
+.view-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.view-toggle-btn:active {
+  transform: translateY(0);
+}
